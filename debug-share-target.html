@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Target デバッグツール</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .debug-section {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .error { background: #ffebee; border-left: 4px solid #f44336; }
+        .success { background: #e8f5e8; border-left: 4px solid #4caf50; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 16px;
+        }
+        button:hover { background: #1565c0; }
+        .test-result {
+            font-family: monospace;
+            background: #2d2d2d;
+            color: #f5f5f5;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Share Target デバッグツール</h1>
+    
+    <div class="debug-section warning">
+        <h3>⚠️ 現在の問題</h3>
+        <p>共有機能でエラーが発生している場合、以下のテストで原因を特定できます。</p>
+    </div>
+
+    <div class="debug-section">
+        <h3>📋 現在の設定情報</h3>
+        <div id="config-info">設定を読み込み中...</div>
+    </div>
+
+    <div class="debug-section">
+        <h3>🧪 Share Target URLテスト</h3>
+        <p>共有機能が実際に呼び出すURLをテストします：</p>
+        <div>
+            <input type="url" id="test-url" placeholder="テスト用URL (例: https://youtube.com/watch?v=123)" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+            <input type="text" id="test-title" placeholder="タイトル (例: テスト動画)" value="テスト動画">
+            <input type="text" id="test-text" placeholder="テキスト (例: 共有テスト)" value="共有テスト">
+        </div>
+        <button onclick="testShareTarget()">🚀 Share Target URLをテスト</button>
+        <button onclick="simulateShare()">📱 共有をシミュレート</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>🔧 Service Worker 診断</h3>
+        <button onclick="checkServiceWorker()">Service Worker状態確認</button>
+        <button onclick="clearServiceWorker()">Service Worker リセット</button>
+        <button onclick="testFetch()">Fetch動作テスト</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>📄 Manifest.json 診断</h3>
+        <button onclick="checkManifest()">Manifest設定確認</button>
+        <button onclick="validateShareTarget()">Share Target設定検証</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>📊 テスト結果</h3>
+        <div id="test-results" class="test-result">テスト結果がここに表示されます...</div>
+    </div>
+
+    <script>
+        let testResults = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            const logMessage = `[${timestamp}] ${prefix} ${message}`;
+            testResults.push(logMessage);
+            updateTestResults();
+            console.log(logMessage);
+        }
+
+        function updateTestResults() {
+            document.getElementById('test-results').textContent = testResults.join('\n');
+        }
+
+        async function loadConfigInfo() {
+            try {
+                const response = await fetch('./manifest.json');
+                const manifest = await response.json();
+                
+                const configDiv = document.getElementById('config-info');
+                configDiv.innerHTML = `
+                    <p><strong>アプリ名:</strong> ${manifest.name}</p>
+                    <p><strong>Start URL:</strong> ${manifest.start_url}</p>
+                    <p><strong>Scope:</strong> ${manifest.scope}</p>
+                    <p><strong>Share Target Action:</strong> ${manifest.share_target.action}</p>
+                    <p><strong>現在のURL:</strong> ${location.href}</p>
+                    <p><strong>Origin:</strong> ${location.origin}</p>
+                `;
+                log(`Manifest読み込み成功: ${manifest.name}`, 'success');
+            } catch (error) {
+                log(`Manifest読み込みエラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function testShareTarget() {
+            const url = document.getElementById('test-url').value;
+            const title = document.getElementById('test-title').value;
+            const text = document.getElementById('test-text').value;
+
+            if (!url) {
+                log('テスト用URLを入力してください', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('./manifest.json');
+                const manifest = await response.json();
+                
+                const shareTargetUrl = new URL(manifest.share_target.action, location.origin);
+                shareTargetUrl.searchParams.set('url', url);
+                shareTargetUrl.searchParams.set('title', title);
+                shareTargetUrl.searchParams.set('text', text);
+
+                log(`生成されたShare Target URL: ${shareTargetUrl.toString()}`, 'info');
+                
+                // 実際にアクセスしてみる
+                const testResponse = await fetch(shareTargetUrl.toString());
+                if (testResponse.ok) {
+                    log(`Share Target URLアクセス成功 (${testResponse.status})`, 'success');
+                } else {
+                    log(`Share Target URLアクセス失敗 (${testResponse.status})`, 'error');
+                }
+                
+            } catch (error) {
+                log(`Share Target URLテストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        function simulateShare() {
+            const url = document.getElementById('test-url').value;
+            const title = document.getElementById('test-title').value;
+            const text = document.getElementById('test-text').value;
+
+            const shareTargetUrl = `${location.origin}/playground-web-share-target-api/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&text=${encodeURIComponent(text)}`;
+            
+            log(`共有シミュレーション URL: ${shareTargetUrl}`, 'info');
+            window.open(shareTargetUrl, '_blank');
+        }
+
+        async function checkServiceWorker() {
+            if (!('serviceWorker' in navigator)) {
+                log('Service Workerがサポートされていません', 'error');
+                return;
+            }
+
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    log(`Service Worker登録済み - Scope: ${registration.scope}`, 'success');
+                    log(`Active Worker状態: ${registration.active?.state || 'なし'}`, 'info');
+                    
+                    if (registration.waiting) {
+                        log('新しいService Workerが待機中です', 'warning');
+                    }
+                } else {
+                    log('Service Workerが登録されていません', 'error');
+                }
+            } catch (error) {
+                log(`Service Worker確認エラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearServiceWorker() {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                    log(`Service Worker登録解除: ${registration.scope}`, 'success');
+                }
+                
+                // キャッシュもクリア
+                const cacheNames = await caches.keys();
+                for (const cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                    log(`キャッシュ削除: ${cacheName}`, 'success');
+                }
+                
+                log('ページをリロードしてください', 'warning');
+            } catch (error) {
+                log(`Service Workerリセットエラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFetch() {
+            const testUrl = `${location.origin}/playground-web-share-target-api/?url=https://example.com&title=fetchtest`;
+            
+            try {
+                log(`Fetchテスト開始: ${testUrl}`, 'info');
+                const response = await fetch(testUrl);
+                log(`Fetchレスポンス: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                const text = await response.text();
+                log(`レスポンス内容: ${text.substring(0, 100)}...`, 'info');
+                
+            } catch (error) {
+                log(`Fetchテストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkManifest() {
+            try {
+                const response = await fetch('./manifest.json');
+                const manifest = await response.json();
+                
+                log(`Manifest取得成功`, 'success');
+                log(`Share Target設定: ${JSON.stringify(manifest.share_target, null, 2)}`, 'info');
+                
+                // 必須フィールドチェック
+                const required = ['action', 'method', 'params'];
+                const missing = required.filter(field => !manifest.share_target[field]);
+                
+                if (missing.length === 0) {
+                    log('Share Target設定は完全です', 'success');
+                } else {
+                    log(`不足しているフィールド: ${missing.join(', ')}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`Manifest確認エラー: ${error.message}`, 'error');
+            }
+        }
+
+        function validateShareTarget() {
+            const currentUrl = new URL(location.href);
+            const hasShareParams = currentUrl.searchParams.has('url') || 
+                                  currentUrl.searchParams.has('title') || 
+                                  currentUrl.searchParams.has('text');
+                                  
+            if (hasShareParams) {
+                log('現在のページは共有パラメータ付きでアクセスされています', 'success');
+                log(`URL: ${currentUrl.searchParams.get('url') || 'なし'}`, 'info');
+                log(`Title: ${currentUrl.searchParams.get('title') || 'なし'}`, 'info');
+                log(`Text: ${currentUrl.searchParams.get('text') || 'なし'}`, 'info');
+            } else {
+                log('共有パラメータは検出されませんでした', 'warning');
+            }
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfigInfo();
+            validateShareTarget();
+            log('デバッグツール初期化完了', 'success');
+        });
+    </script>
+</body>
+</html>

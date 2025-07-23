@@ -25,7 +25,7 @@
     }
   ],
   "share_target": {
-    "action": "/playground-web-share-target-api/",
+    "action": "./",
     "method": "GET",
     "params": {
       "title": "title",

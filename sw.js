@@ -53,8 +53,10 @@ self.addEventListener('activate', (event) => {
 // リクエストの処理（キャッシュファーストストラテジー）
 self.addEventListener('fetch', (event) => {
     // Share Target APIのリクエストを特別に処理
-    if (event.request.url.includes('/playground-web-share-target-api/') && 
-        (event.request.url.includes('title=') || event.request.url.includes('url=') || event.request.url.includes('text='))) {
+    const url = new URL(event.request.url);
+    const hasShareParams = url.searchParams.has('title') || url.searchParams.has('url') || url.searchParams.has('text');
+    
+    if (hasShareParams && url.pathname.includes('playground-web-share-target-api')) {
         console.log('📥 Service Worker: Share Target リクエストを受信:', event.request.url);
         
         event.respondWith(
@@ -106,39 +108,35 @@ self.addEventListener('fetch', (event) => {
 
 // Share Target APIの処理
 async function handleShareTarget(request) {
-    const url = new URL(request.url);
-    const sharedData = {
-        title: url.searchParams.get('title') || '',
-        text: url.searchParams.get('text') || '',
-        url: url.searchParams.get('url') || ''
-    };
-    
-    console.log('📤 Service Worker: 共有データを処理:', sharedData);
+    console.log('📤 Service Worker: Share Target処理開始:', request.url);
     
     try {
-        // GitHub PagesのベースURLを取得
-        const baseUrl = self.location.origin + '/playground-web-share-target-api/';
-        const targetUrl = new URL(baseUrl);
-        
-        if (sharedData.title) {
-            targetUrl.searchParams.set('title', sharedData.title);
-        }
-        if (sharedData.text) {
-            targetUrl.searchParams.set('text', sharedData.text);
-        }
-        if (sharedData.url) {
-            targetUrl.searchParams.set('url', sharedData.url);
+        // パラメータをそのまま維持して、通常のページ表示を行う
+        const response = await caches.match('/playground-web-share-target-api/index.html');
+        if (response) {
+            console.log('✅ Service Worker: キャッシュからindex.htmlを返します');
+            return response;
         }
         
-        console.log('🔄 Service Worker: リダイレクト先:', targetUrl.toString());
+        // キャッシュにない場合はネットワークから取得
+        const networkResponse = await fetch('/playground-web-share-target-api/index.html');
+        console.log('✅ Service Worker: ネットワークからindex.htmlを取得');
+        return networkResponse;
         
-        return Response.redirect(targetUrl.toString(), 302);
     } catch (error) {
         console.error('❌ Service Worker: Share Target処理エラー:', error);
         
-        // エラーの場合はメインページにリダイレクト
-        const fallbackUrl = self.location.origin + '/playground-web-share-target-api/';
-        return Response.redirect(fallbackUrl, 302);
+        // 最後の手段として、パラメータ付きでリダイレクト
+        const url = new URL(request.url);
+        const targetUrl = new URL('/playground-web-share-target-api/', self.location.origin);
+        
+        // パラメータをコピー
+        for (const [key, value] of url.searchParams) {
+            targetUrl.searchParams.set(key, value);
+        }
+        
+        console.log('🔄 Service Worker: フォールバックリダイレクト:', targetUrl.toString());
+        return Response.redirect(targetUrl.toString(), 302);
     }
 }
 
