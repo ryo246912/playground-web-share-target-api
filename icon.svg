@@ -1,0 +1,27 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="192" height="192" fill="#1976d2" rx="24"/>
+  
+  <!-- 共有アイコン -->
+  <g fill="#ffffff">
+    <!-- 中央の円 -->
+    <circle cx="96" cy="96" r="28"/>
+    
+    <!-- 上向き矢印 -->
+    <path d="M96 40 L80 56 L88 56 L88 68 L104 68 L104 56 L112 56 Z"/>
+    
+    <!-- 左の円 -->
+    <circle cx="48" cy="125" r="20"/>
+    
+    <!-- 右の円 -->
+    <circle cx="144" cy="125" r="20"/>
+    
+    <!-- 接続線（左） -->
+    <path d="M68 105 L76 113 L80 109 L72 101 Z"/>
+    <rect x="72" y="101" width="4" height="24" transform="rotate(-45 74 113)"/>
+    
+    <!-- 接続線（右） -->
+    <path d="M116 105 L124 113 L120 109 L112 101 Z"/>
+    <rect x="116" y="101" width="4" height="24" transform="rotate(45 118 113)"/>
+  </g>
+</svg>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Share Target API Playground</title>
+    <meta name="description" content="Web Share Target APIを使用したURL共有受信のモックアップアプリケーション">
+    
+    <!-- PWA設定 -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#1976d2">
+    
+    <!-- アイコン設定 -->
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <header>
+        <h1>🔗 Web Share Target Playground</h1>
+        <p>ソーシャルメディアからのURL共有を受信するモックアップアプリ</p>
+    </header>
+
+    <main>
+        <!-- 共有データ表示エリア -->
+        <section id="shared-content" class="content-section">
+            <h2>📥 受信したコンテンツ</h2>
+            <div id="shared-data-display">
+                <p class="placeholder">共有されたコンテンツがここに表示されます</p>
+            </div>
+        </section>
+
+        <!-- 履歴表示エリア -->
+        <section id="history" class="content-section">
+            <h2>📋 共有履歴</h2>
+            <div class="history-controls">
+                <button id="clear-history-btn" class="btn btn-secondary">履歴をクリア</button>
+            </div>
+            <div id="history-list">
+                <p class="placeholder">まだ履歴がありません</p>
+            </div>
+        </section>
+
+        <!-- テスト機能エリア -->
+        <section id="test-section" class="content-section">
+            <h2>🧪 テスト機能</h2>
+            <div class="test-form">
+                <input type="url" id="test-url" placeholder="テスト用URLを入力してください">
+                <input type="text" id="test-title" placeholder="タイトル（オプション）">
+                <button id="test-share-btn" class="btn btn-primary">テスト共有</button>
+            </div>
+        </section>
+
+        <!-- PWAインストール促進 -->
+        <section id="install-prompt" class="content-section" style="display: none;">
+            <h2>📱 アプリをインストール</h2>
+            <p>このアプリをホーム画面に追加して、共有機能を有効にしましょう</p>
+            <button id="install-btn" class="btn btn-primary">インストール</button>
+        </section>
+
+        <!-- ステータス情報 -->
+        <section id="status" class="content-section">
+            <h2>ℹ️ ステータス情報</h2>
+            <div id="status-info">
+                <div class="status-item">
+                    <span class="status-label">PWAサポート:</span>
+                    <span id="pwa-support" class="status-value">確認中...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Share Target APIサポート:</span>
+                    <span id="share-target-support" class="status-value">確認中...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">インストール状態:</span>
+                    <span id="install-status" class="status-value">確認中...</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Web Share Target API Playground - 検証用モックアップ</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SVG to PNG Converter</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-container { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1565c0; }
+    </style>
+</head>
+<body>
+    <h1>SVG to PNG Converter</h1>
+    <p>SVGアイコンをPNGに変換してダウンロードします。</p>
+    
+    <div class="icon-container">
+        <h3>192x192 Icon</h3>
+        <canvas id="canvas192" width="192" height="192"></canvas>
+        <button onclick="convertAndDownload(192, 'icon-192.png')">icon-192.png をダウンロード</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>512x512 Icon</h3>
+        <canvas id="canvas512" width="512" height="512"></canvas>
+        <button onclick="convertAndDownload(512, 'icon-512.png')">icon-512.png をダウンロード</button>
+    </div>
+    
+    <script>
+        function loadSVG(size, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+            };
+            
+            // SVGデータを直接埋め込み
+            const svgData = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+              <rect width="${size}" height="${size}" fill="#1976d2" rx="${Math.floor(size/8)}"/>
+              <g fill="#ffffff">
+                <circle cx="${Math.floor(size/2)}" cy="${Math.floor(size/2)}" r="${Math.floor(size/7)}"/>
+                <path d="M${Math.floor(size/2)} ${Math.floor(size/5)} L${Math.floor(size/2-size/12)} ${Math.floor(size/3)} L${Math.floor(size/2-size/24)} ${Math.floor(size/3)} L${Math.floor(size/2-size/24)} ${Math.floor(size/2-size/14)} L${Math.floor(size/2+size/24)} ${Math.floor(size/2-size/14)} L${Math.floor(size/2+size/24)} ${Math.floor(size/3)} L${Math.floor(size/2+size/12)} ${Math.floor(size/3)} Z"/>
+                <circle cx="${Math.floor(size/4)}" cy="${Math.floor(size/2+size/6)}" r="${Math.floor(size/10)}"/>
+                <circle cx="${Math.floor(size*3/4)}" cy="${Math.floor(size/2+size/6)}" r="${Math.floor(size/10)}"/>
+                <line x1="${Math.floor(size/2-size/8)}" y1="${Math.floor(size/2+size/12)}" x2="${Math.floor(size/4+size/12)}" y2="${Math.floor(size/2+size/8)}" stroke="#ffffff" stroke-width="${Math.floor(size/48)}" stroke-linecap="round"/>
+                <line x1="${Math.floor(size/2+size/8)}" y1="${Math.floor(size/2+size/12)}" x2="${Math.floor(size*3/4-size/12)}" y2="${Math.floor(size/2+size/8)}" stroke="#ffffff" stroke-width="${Math.floor(size/48)}" stroke-linecap="round"/>
+              </g>
+            </svg>`;
+            
+            const blob = new Blob([svgData], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            img.src = url;
+        }
+        
+        function convertAndDownload(size, filename) {
+            const canvas = document.getElementById('canvas' + size);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            console.log(`✅ ${filename} をダウンロードしました`);
+        }
+        
+        // ページ読み込み時にSVGを描画
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSVG(192, 'canvas192');
+            loadSVG(512, 'canvas512');
+        });
+    </script>
+</body>
+</html>
