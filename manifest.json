@@ -2,7 +2,7 @@
   "name": "Web Share Target API Playground",
   "short_name": "Share Target",
   "description": "Web Share Target APIを使用したURL共有受信のモックアップアプリケーション",
-  "start_url": "/",
+  "start_url": "/?utm_source=pwa",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1976d2",

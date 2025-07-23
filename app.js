@@ -245,11 +245,17 @@ class WebShareTargetApp {
     setupInstallPrompt() {
         let deferredPrompt;
         
+        // ユーザーエンゲージメントを追跡
+        this.trackUserEngagement();
+        
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             document.getElementById('install-prompt').style.display = 'block';
             console.log('📱 PWAインストールプロンプトが表示可能です');
+            
+            // エンゲージメント条件をチェック
+            this.checkEngagementConditions();
         });
         
         document.getElementById('install-btn').addEventListener('click', async () => {
@@ -259,6 +265,9 @@ class WebShareTargetApp {
                 console.log(`📱 PWAインストール結果: ${outcome}`);
                 deferredPrompt = null;
                 document.getElementById('install-prompt').style.display = 'none';
+            } else {
+                // 手動インストール指示を表示
+                this.showManualInstallInstructions();
             }
         });
         
@@ -268,6 +277,106 @@ class WebShareTargetApp {
             document.getElementById('install-status').textContent = '✅ インストール済み';
             document.getElementById('install-status').className = 'status-value success';
         });
+        
+        // 定期的にインストール条件をチェック
+        setTimeout(() => this.forceInstallCheck(), 10000); // 10秒後
+        setTimeout(() => this.forceInstallCheck(), 30000); // 30秒後
+    }
+
+    trackUserEngagement() {
+        let interactionCount = parseInt(localStorage.getItem('userInteractions') || '0');
+        const pageViews = parseInt(localStorage.getItem('pageViews') || '0') + 1;
+        
+        localStorage.setItem('pageViews', pageViews.toString());
+        localStorage.setItem('lastVisit', new Date().toISOString());
+        
+        // ユーザーインタラクションを記録
+        ['click', 'scroll', 'keydown', 'touchstart'].forEach(eventType => {
+            document.addEventListener(eventType, () => {
+                interactionCount++;
+                localStorage.setItem('userInteractions', interactionCount.toString());
+            }, { once: false, passive: true });
+        });
+        
+        console.log(`📊 ページビュー: ${pageViews}, インタラクション: ${interactionCount}`);
+    }
+
+    checkEngagementConditions() {
+        const pageViews = parseInt(localStorage.getItem('pageViews') || '0');
+        const interactions = parseInt(localStorage.getItem('userInteractions') || '0');
+        
+        if (pageViews >= 2 || interactions >= 5) {
+            console.log('✅ エンゲージメント条件を満たしています');
+            return true;
+        }
+        
+        console.log('⚠️ エンゲージメント条件が不足しています');
+        return false;
+    }
+
+    forceInstallCheck() {
+        console.log('🔍 強制的にインストール条件をチェック中...');
+        
+        const engagement = this.checkEngagementConditions();
+        const hasServiceWorker = 'serviceWorker' in navigator;
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+        
+        if (engagement && hasServiceWorker && isSecure) {
+            console.log('💡 インストール条件を満たしていますが、beforeinstallpromptが発火していません');
+            this.showAlternativeInstallPrompt();
+        }
+    }
+
+    showAlternativeInstallPrompt() {
+        const installSection = document.getElementById('install-prompt');
+        if (installSection.style.display === 'block') return; // 既に表示中
+        
+        installSection.innerHTML = `
+            <h2>📱 アプリをインストール</h2>
+            <div style="background: linear-gradient(135deg, #e8f5e8, #c8e6c9); padding: 16px; border-radius: 8px; margin: 12px 0;">
+                <p><strong>✅ このサイトをアプリとしてインストールできます！</strong></p>
+                <p>ホーム画面に追加して、より便利にご利用ください。</p>
+                <button id="manual-install-btn" class="btn btn-primary" style="margin: 8px 4px;">
+                    📱 インストール方法を見る
+                </button>
+                <button id="close-prompt-btn" class="btn btn-secondary" style="margin: 8px 4px;">
+                    後で
+                </button>
+            </div>
+        `;
+        
+        installSection.style.display = 'block';
+        
+        document.getElementById('manual-install-btn').addEventListener('click', () => {
+            this.showManualInstallInstructions();
+        });
+        
+        document.getElementById('close-prompt-btn').addEventListener('click', () => {
+            installSection.style.display = 'none';
+        });
+    }
+
+    showManualInstallInstructions() {
+        const instructions = `📱 PWAインストール方法:
+
+🤖 Android Chrome:
+1. 画面右上のメニュー (⋮) をタップ
+2. "アプリをインストール" または "ホーム画面に追加" を選択
+3. 確認ダイアログで "インストール" をタップ
+
+🍎 iPhone Safari:
+1. 画面下部の共有ボタン (□↗) をタップ
+2. "ホーム画面に追加" を選択
+3. "追加" をタップ
+
+💻 デスクトップ Chrome:
+1. アドレスバー右側のインストールアイコンをクリック
+2. または設定メニュー > "アプリをインストール"
+
+💡 ヒント: アプリをインストールすると、ホーム画面から素早くアクセスでき、共有機能も利用できるようになります！`;
+
+        alert(instructions);
+        console.log(instructions);
     }
 }
 
