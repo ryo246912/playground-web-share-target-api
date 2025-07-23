@@ -1,12 +1,12 @@
 const CACHE_NAME = 'web-share-target-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/manifest.json',
-    '/icon-192.png',
-    '/icon-512.png'
+    '/playground-web-share-target-api/',
+    '/playground-web-share-target-api/index.html',
+    '/playground-web-share-target-api/styles.css',
+    '/playground-web-share-target-api/app.js',
+    '/playground-web-share-target-api/manifest.json',
+    '/playground-web-share-target-api/icon-192.png',
+    '/playground-web-share-target-api/icon-512.png'
 ];
 
 // Service Worker インストール
@@ -53,7 +53,8 @@ self.addEventListener('activate', (event) => {
 // リクエストの処理（キャッシュファーストストラテジー）
 self.addEventListener('fetch', (event) => {
     // Share Target APIのリクエストを特別に処理
-    if (event.request.url.includes('/share-target/')) {
+    if (event.request.url.includes('/playground-web-share-target-api/') && 
+        (event.request.url.includes('title=') || event.request.url.includes('url=') || event.request.url.includes('text='))) {
         console.log('📥 Service Worker: Share Target リクエストを受信:', event.request.url);
         
         event.respondWith(
@@ -94,7 +95,7 @@ self.addEventListener('fetch', (event) => {
                         
                         // オフラインページまたはデフォルトレスポンスを返す
                         if (event.request.destination === 'document') {
-                            return caches.match('/index.html');
+                            return caches.match('/playground-web-share-target-api/index.html');
                         }
                         
                         throw error;
@@ -115,8 +116,9 @@ async function handleShareTarget(request) {
     console.log('📤 Service Worker: 共有データを処理:', sharedData);
     
     try {
-        // メインページにリダイレクトして共有データをURLパラメータとして渡す
-        const targetUrl = new URL('/', self.location.origin);
+        // GitHub PagesのベースURLを取得
+        const baseUrl = self.location.origin + '/playground-web-share-target-api/';
+        const targetUrl = new URL(baseUrl);
         
         if (sharedData.title) {
             targetUrl.searchParams.set('title', sharedData.title);
@@ -135,7 +137,8 @@ async function handleShareTarget(request) {
         console.error('❌ Service Worker: Share Target処理エラー:', error);
         
         // エラーの場合はメインページにリダイレクト
-        return Response.redirect('/', 302);
+        const fallbackUrl = self.location.origin + '/playground-web-share-target-api/';
+        return Response.redirect(fallbackUrl, 302);
     }
 }
 
@@ -175,7 +178,7 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     
     event.waitUntil(
-        self.clients.openWindow('/')
+        self.clients.openWindow('/playground-web-share-target-api/')
     );
 });
 
